@@ -1,0 +1,2225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1a1814">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ledger — личные финансы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f4efe6;
+  --paper-2: #ebe4d6;
+  --paper-3: #ddd3bf;
+  --ink: #1a1814;
+  --ink-2: #3a342a;
+  --ink-3: #6b6353;
+  --ink-4: #a09684;
+  --line: #c8bea8;
+  --accent: #c43a1f;
+  --accent-2: #d4691a;
+  --green: #4a6b3a;
+  --red: #b53524;
+  --gold: #b8862c;
+  --shadow: 0 1px 0 rgba(26,24,20,0.04), 0 2px 8px rgba(26,24,20,0.06);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: contain;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 20% 10%, rgba(196,58,31,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(184,134,44,0.04) 0%, transparent 50%);
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.09 0 0 0 0 0.08 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.app { position: relative; z-index: 2; max-width: 720px; margin: 0 auto; }
+
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; padding: 0; }
+input, select, textarea { font-family: inherit; font-size: 16px; }
+
+.mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+.serif { font-family: 'Fraunces', Georgia, serif; }
+
+/* ============ LOGIN SCREEN ============ */
+.auth-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 28px;
+  position: relative;
+}
+
+.auth-mark {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 24px);
+  left: 28px;
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+.auth-mark::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+  margin-left: 4px;
+  vertical-align: 2px;
+}
+
+.auth-hero {
+  margin-bottom: 36px;
+}
+.auth-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+.auth-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: clamp(38px, 11vw, 56px);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+.auth-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 300;
+}
+.auth-sub {
+  margin-top: 16px;
+  color: var(--ink-3);
+  font-size: 14px;
+  max-width: 360px;
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.field input, .field select, .field textarea {
+  background: transparent;
+  border: none;
+  border-bottom: 1.5px solid var(--line);
+  padding: 10px 0;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-bottom-color: var(--ink);
+}
+
+.btn {
+  padding: 14px 20px;
+  border-radius: 2px;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s;
+  border: 1.5px solid transparent;
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-primary:active { transform: translateY(1px); }
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border-color: var(--line);
+}
+.btn-ghost:active { background: var(--paper-2); }
+.btn-danger { background: transparent; color: var(--red); border-color: var(--line); }
+
+.auth-switch {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.auth-switch button {
+  color: var(--accent);
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.auth-error {
+  background: rgba(181,53,36,0.08);
+  border-left: 3px solid var(--red);
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--red);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ============ MAIN APP ============ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 12px;
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  background: linear-gradient(to bottom, var(--paper) 75%, rgba(244,239,230,0));
+  z-index: 50;
+  padding-top: calc(env(safe-area-inset-top) + 14px);
+}
+.brand {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  font-size: 19px;
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.brand::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.top-actions { display: flex; gap: 4px; }
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+  transition: background 0.15s;
+  position: relative;
+}
+.icon-btn:active { background: var(--paper-2); }
+.icon-btn svg { width: 20px; height: 20px; }
+.icon-btn.has-dot::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  border: 2px solid var(--paper);
+}
+
+.user-chip {
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 22px 4px;
+}
+.user-chip strong { color: var(--ink); font-weight: 500; }
+
+.section { padding: 16px 22px 8px; }
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.section-link {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* Period selector */
+.periods {
+  display: flex;
+  gap: 0;
+  padding: 0 22px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.periods::-webkit-scrollbar { display: none; }
+.period-pill {
+  padding: 7px 14px;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  border-radius: 100px;
+  white-space: nowrap;
+  font-weight: 500;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.period-pill.active { color: var(--paper); background: var(--ink); }
+
+/* Cards grid */
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 4px 22px 8px;
+}
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 16px 14px 14px;
+  position: relative;
+  transition: transform 0.1s, box-shadow 0.15s;
+  text-align: left;
+  display: block;
+  width: 100%;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--ink);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.card:active { transform: scale(0.985); }
+.card.tap-feedback::before { opacity: 1; }
+.card.balance { grid-column: 1 / -1; padding: 20px; }
+.card.balance::before { background: var(--accent); opacity: 1; }
+
+.card-label {
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-value {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.card.balance .card-value { font-size: 42px; }
+.card-value .cur {
+  font-size: 0.55em;
+  color: var(--ink-3);
+  margin-left: 4px;
+  letter-spacing: 0;
+}
+.card-trend {
+  margin-top: 8px;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+.trend-up { color: var(--green); }
+.trend-down { color: var(--red); }
+.card .arrow {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  color: var(--ink-4);
+}
+
+/* Recent transactions */
+.tx-list {
+  border-top: 1px solid var(--line);
+  margin: 0 22px;
+}
+.tx-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  width: 100%;
+  background: transparent;
+}
+.tx-item:active { background: var(--paper-2); }
+.tx-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+  border: 1px solid var(--line);
+}
+.tx-body { flex: 1; min-width: 0; }
+.tx-title {
+  font-size: 14.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tx-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tx-meta .dot { width: 3px; height: 3px; background: var(--ink-4); border-radius: 50%; }
+.tx-amount {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.tx-amount.pos { color: var(--green); }
+.tx-amount.neg { color: var(--ink); }
+.recurring-badge {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--paper-3);
+  color: var(--ink-2);
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.empty {
+  padding: 40px 22px;
+  text-align: center;
+  color: var(--ink-3);
+}
+.empty-icon { font-size: 32px; opacity: 0.4; margin-bottom: 12px; }
+.empty-title {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.empty-text { font-size: 13px; max-width: 280px; margin: 0 auto; }
+
+/* FAB */
+.fab {
+  position: fixed;
+  right: 22px;
+  bottom: calc(22px + env(safe-area-inset-bottom));
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(26,24,20,0.25), 0 2px 4px rgba(26,24,20,0.15);
+  z-index: 60;
+  transition: transform 0.15s;
+}
+.fab:active { transform: scale(0.92); }
+.fab svg { width: 26px; height: 26px; }
+
+/* ============ SHEETS / MODALS ============ */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,24,20,0.5);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: all; }
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--paper);
+  border-radius: 16px 16px 0 0;
+  z-index: 101;
+  transform: translateY(100%);
+  transition: transform 0.28s cubic-bezier(.2,.8,.2,1);
+  max-height: 92vh;
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -8px 30px rgba(26,24,20,0.15);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle {
+  width: 36px;
+  height: 4px;
+  background: var(--ink-4);
+  border-radius: 2px;
+  margin: 8px auto 4px;
+  opacity: 0.4;
+}
+.sheet-header {
+  padding: 8px 22px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.sheet-title {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.sheet-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+}
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px 22px;
+  -webkit-overflow-scrolling: touch;
+}
+.sheet-footer {
+  padding: 14px 22px calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+/* Add form */
+.type-toggle {
+  display: flex;
+  background: var(--paper-2);
+  border-radius: 4px;
+  padding: 3px;
+  margin-bottom: 4px;
+}
+.type-toggle button {
+  flex: 1;
+  padding: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  border-radius: 3px;
+  color: var(--ink-3);
+  transition: all 0.15s;
+}
+.type-toggle button.active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.amount-input-wrap {
+  text-align: center;
+  padding: 24px 0 18px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+.amount-input-wrap .lbl {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+}
+.amount-input {
+  font-family: 'Fraunces', serif;
+  font-size: 48px;
+  font-weight: 400;
+  border: none;
+  outline: none;
+  background: transparent;
+  text-align: center;
+  width: 100%;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.amount-input::placeholder { color: var(--ink-4); }
+
+.form-grid { display: grid; gap: 14px; }
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 4px;
+}
+.checkbox-row input { margin-top: 2px; width: 18px; height: 18px; accent-color: var(--ink); }
+.checkbox-row label { flex: 1; font-size: 14px; cursor: pointer; }
+.checkbox-row .hint { font-size: 12px; color: var(--ink-3); margin-top: 2px; display: block; }
+
+.recur-options {
+  display: none;
+  padding: 12px 0 4px;
+  gap: 10px;
+  flex-direction: column;
+}
+.recur-options.show { display: flex; }
+
+/* Detail sheet */
+.detail-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+}
+.detail-stat .lbl {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 4px;
+}
+.detail-stat .val {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+}
+
+.category-list { display: flex; flex-direction: column; gap: 10px; }
+.category-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.category-bar-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+}
+.category-bar-name { font-weight: 500; }
+.category-bar-amount { font-family: 'JetBrains Mono', monospace; color: var(--ink-3); font-size: 12px; }
+.category-bar-track {
+  height: 6px;
+  background: var(--paper-2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.category-bar-fill {
+  height: 100%;
+  background: var(--ink);
+  transition: width 0.4s ease;
+}
+.category-bar-fill.income { background: var(--green); }
+
+/* Tips */
+.tip-card {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: var(--paper);
+  position: relative;
+}
+.tip-card.priority::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+}
+.tip-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.tip-icon-sm { font-size: 16px; }
+.tip-title {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 500;
+  flex: 1;
+}
+.tip-tag {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--paper-2);
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.tip-tag.warn { background: rgba(196,58,31,0.1); color: var(--accent); }
+.tip-tag.good { background: rgba(74,107,58,0.12); color: var(--green); }
+.tip-body { font-size: 13.5px; color: var(--ink-2); line-height: 1.5; }
+.tip-body strong { color: var(--ink); font-weight: 500; }
+
+/* Recurring list */
+.recur-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.recur-item:last-child { border-bottom: none; }
+.recur-next {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.recur-delete {
+  color: var(--red);
+  padding: 8px;
+  font-size: 13px;
+}
+
+/* Settings list */
+.settings-group { margin-bottom: 24px; }
+.settings-group-title {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 8px;
+  padding-left: 2px;
+  font-weight: 500;
+}
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  width: 100%;
+  background: transparent;
+}
+.settings-item:last-child { border-bottom: none; }
+.settings-item-label { font-size: 14.5px; }
+.settings-item-meta { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+.settings-arrow { color: var(--ink-4); }
+
+/* Toasts */
+.toast {
+  position: fixed;
+  bottom: calc(100px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  max-width: 90%;
+  text-align: center;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: var(--green); }
+.toast.error { background: var(--red); }
+
+/* No-tx empty in details */
+.tx-detail-list { margin-top: 18px; }
+.tx-detail-list .tx-item:first-child { border-top: 1px solid var(--line); }
+
+/* Footer brand mark */
+.foot {
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  padding: 30px 22px calc(110px + env(safe-area-inset-bottom));
+}
+.foot::before, .foot::after {
+  content: '—';
+  margin: 0 8px;
+  color: var(--ink-4);
+}
+
+/* CSV import preview */
+.csv-preview {
+  background: var(--paper-2);
+  padding: 12px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  max-height: 180px;
+  overflow: auto;
+  margin: 10px 0;
+  white-space: pre;
+}
+
+@media (min-width: 600px) {
+  .cards { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .card.balance { grid-column: 1 / -1; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="authView" class="app auth-screen">
+  <div class="auth-mark">Ledger</div>
+  <div class="auth-hero">
+    <div class="auth-eyebrow">Личные финансы</div>
+    <h1 class="auth-title">Считай <em>тише</em>,<br>живи спокойнее.</h1>
+    <p class="auth-sub">Простой и приватный учёт доходов, расходов и подписок. Все данные хранятся локально в этом браузере.</p>
+  </div>
+
+  <div id="authError" class="auth-error" style="display:none"></div>
+
+  <form id="authForm" class="auth-form" onsubmit="return false">
+    <div class="field">
+      <label for="authUser">Имя пользователя</label>
+      <input id="authUser" type="text" autocomplete="username" autocapitalize="none" required>
+    </div>
+    <div class="field">
+      <label for="authPass">Пароль</label>
+      <input id="authPass" type="password" autocomplete="current-password" required>
+    </div>
+    <button id="authSubmit" class="btn btn-primary" style="margin-top:10px">Войти</button>
+    <div class="auth-switch">
+      <span id="authSwitchText">Впервые здесь?</span>
+      <button type="button" id="authSwitchBtn">Создать аккаунт</button>
+    </div>
+  </form>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="appView" class="app" style="display:none">
+  <div class="topbar">
+    <div class="brand">Ledger</div>
+    <div class="top-actions">
+      <button class="icon-btn" id="btnTips" title="Советы" aria-label="Советы">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnRecurring" title="Подписки" aria-label="Регулярные платежи">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-3-6.7L21 8"/>
+          <path d="M21 3v5h-5"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="Настройки" aria-label="Настройки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .4 1.8l.1.1a2 2 0 1 1-2.9 2.9l-.1-.1a1.7 1.7 0 0 0-1.8-.4 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.4l-.1.1a2 2 0 1 1-2.9-2.9l.1-.1a1.7 1.7 0 0 0 .4-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.4-1.8l-.1-.1a2 2 0 1 1 2.9-2.9l.1.1a1.7 1.7 0 0 0 1.8.4H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.4l.1-.1a2 2 0 1 1 2.9 2.9l-.1.1a1.7 1.7 0 0 0-.4 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="user-chip">Вход как <strong id="userChipName">—</strong></div>
+
+  <div class="periods" id="periods">
+    <button class="period-pill" data-p="week">Неделя</button>
+    <button class="period-pill active" data-p="month">Месяц</button>
+    <button class="period-pill" data-p="quarter">Квартал</button>
+    <button class="period-pill" data-p="year">Год</button>
+    <button class="period-pill" data-p="all">Всё время</button>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-title">Последние операции</div>
+      <button class="section-link" id="seeAllBtn">Все</button>
+    </div>
+  </div>
+  <div class="tx-list" id="txList"></div>
+
+  <div class="foot">Ledger · Локальное хранение</div>
+
+  <button class="fab" id="fab" aria-label="Добавить операцию">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  </button>
+</div>
+
+<!-- ============ SHEETS ============ -->
+<div class="sheet-backdrop" id="backdrop"></div>
+
+<!-- ADD TX SHEET -->
+<div class="sheet" id="sheetAdd">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="addSheetTitle">Новая операция</div>
+    <button class="sheet-close" data-close>✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="type-toggle" id="typeToggle">
+      <button data-type="expense" class="active">Расход</button>
+      <button data-type="income">Доход</button>
+    </div>
+    <div class="amount-input-wrap">
+      <div class="lbl">Сумма</div>
+      <input id="addAmount" class="amount-input mono" type="text" inputmode="decimal" placeholder="0">
+    </div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Описание</label>
+        <input id="addNote" type="text" placeholder="Например, кофе или зарплата">
+      </div>
+      <div class="field">
+        <label>Категория</label>
+        <select id="addCategory"></select>
+      </div>
+      <div class="field">
+        <label>Дата</label>
+        <input id="addDate" type="date">
+      </div>
+      <div class="checkbox-row">
+        <input id="addRecurring" type="checkbox">
+        <label for="addRecurring">
+          Повторяющийся платёж
+          <span class="hint">Подписки, аренда, зарплата — автоматически добавлять по расписанию</span>
+        </label>
+      </div>
+      <div class="recur-options" id="recurOptions">
+        <div class="field">
+          <label>Периодичность</label>
+          <select id="addFrequency">
+            <option value="daily">Ежедневно</option>
+            <option value="weekly">Еженедельно</option>
+            <option value="biweekly">Раз в 2 недели</option>
+            <option value="monthly" selected>Ежемесячно</option>
+            <option value="quarterly">Раз в квартал</option>
+            <option value="yearly">Ежегодно</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="sheet-footer">
+    <button class="btn btn-primary" id="saveTxBtn" style="width:100%">Сохранить</button>
+  </div>
+</div>
+
+<!-- DETAIL SHEET -->
+<div class="sheet" id="sheetDetail">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title" id="detailTitle">Детализация</div>
+    <button class="sheet-close" data-close>✕</button>
+  </div>
+  <div class="sheet-body" id="detailBody"></div>
+</div>
+
+<!-- RECURRING SHEET -->
+<div class="sheet" id="sheetRecurring">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Регулярные платежи</div>
+    <button class="sheet-close" data-close>✕</button>
+  </div>
+  <div class="sheet-body" id="recurringBody"></div>
+</div>
+
+<!-- TIPS SHEET -->
+<div class="sheet" id="sheetTips">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Советы по оптимизации</div>
+    <button class="sheet-close" data-close>✕</button>
+  </div>
+  <div class="sheet-body" id="tipsBody"></div>
+</div>
+
+<!-- SETTINGS SHEET -->
+<div class="sheet" id="sheetSettings">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Настройки</div>
+    <button class="sheet-close" data-close>✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="settings-group">
+      <div class="settings-group-title">Данные</div>
+      <button class="settings-item" id="exportCsvBtn">
+        <div>
+          <div class="settings-item-label">Экспорт в CSV</div>
+          <div class="settings-item-meta">Скачать все операции таблицей</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </button>
+      <button class="settings-item" id="importCsvBtn">
+        <div>
+          <div class="settings-item-label">Импорт из CSV</div>
+          <div class="settings-item-meta">Загрузить операции из таблицы</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </button>
+      <button class="settings-item" id="backupBtn">
+        <div>
+          <div class="settings-item-label">Резервная копия (JSON)</div>
+          <div class="settings-item-meta">Полный бэкап всех данных</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </button>
+      <button class="settings-item" id="restoreBtn">
+        <div>
+          <div class="settings-item-label">Восстановить из JSON</div>
+          <div class="settings-item-meta">Загрузить ранее сохранённый бэкап</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </button>
+    </div>
+    <div class="settings-group">
+      <div class="settings-group-title">Аккаунт</div>
+      <button class="settings-item" id="logoutBtn">
+        <div>
+          <div class="settings-item-label">Выйти</div>
+          <div class="settings-item-meta">Вернуться к экрану входа</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </button>
+      <button class="settings-item" id="wipeBtn">
+        <div>
+          <div class="settings-item-label" style="color:var(--red)">Удалить все мои данные</div>
+          <div class="settings-item-meta">Безвозвратно стереть аккаунт и операции</div>
+        </div>
+        <span class="settings-arrow">→</span>
+      </button>
+    </div>
+    <input type="file" id="fileInputCsv" accept=".csv,text/csv" style="display:none">
+    <input type="file" id="fileInputJson" accept=".json,application/json" style="display:none">
+  </div>
+</div>
+
+<!-- TX DETAIL/EDIT SHEET -->
+<div class="sheet" id="sheetTxEdit">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Операция</div>
+    <button class="sheet-close" data-close>✕</button>
+  </div>
+  <div class="sheet-body" id="txEditBody"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============ STATE & STORAGE ============ */
+const STORAGE_USERS = 'ledger.users';     // { username: {passHash, salt} }
+const STORAGE_SESSION = 'ledger.session'; // current username
+const dataKey = (u) => `ledger.data.${u}`;
+
+const CATEGORIES = {
+  expense: [
+    {id:'food', name:'Еда и продукты', icon:'🍞'},
+    {id:'transport', name:'Транспорт', icon:'🚇'},
+    {id:'housing', name:'Жильё', icon:'🏠'},
+    {id:'utilities', name:'Коммуналка', icon:'💡'},
+    {id:'subscriptions', name:'Подписки', icon:'📺'},
+    {id:'health', name:'Здоровье', icon:'💊'},
+    {id:'clothes', name:'Одежда', icon:'👕'},
+    {id:'entertainment', name:'Развлечения', icon:'🎬'},
+    {id:'cafes', name:'Кафе и рестораны', icon:'☕'},
+    {id:'education', name:'Образование', icon:'📚'},
+    {id:'gifts', name:'Подарки', icon:'🎁'},
+    {id:'travel', name:'Путешествия', icon:'✈️'},
+    {id:'other', name:'Прочее', icon:'📦'}
+  ],
+  income: [
+    {id:'salary', name:'Зарплата', icon:'💼'},
+    {id:'freelance', name:'Фриланс', icon:'💻'},
+    {id:'investments', name:'Инвестиции', icon:'📈'},
+    {id:'gift', name:'Подарок', icon:'🎀'},
+    {id:'refund', name:'Возврат', icon:'↩️'},
+    {id:'other_income', name:'Прочее', icon:'💰'}
+  ]
+};
+
+let state = {
+  user: null,
+  data: null, // { transactions: [], recurring: [] }
+  period: 'month',
+  editingTxId: null
+};
+
+/* ============ CRYPTO (light) ============ */
+async function sha256(str) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function randomSalt() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ============ AUTH ============ */
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_USERS) || '{}'); }
+  catch { return {}; }
+}
+function saveUsers(u) { localStorage.setItem(STORAGE_USERS, JSON.stringify(u)); }
+
+async function tryLogin(username, password) {
+  const users = getUsers();
+  const u = users[username.toLowerCase()];
+  if (!u) return { ok: false, error: 'Пользователь не найден' };
+  const hash = await sha256(password + u.salt);
+  if (hash !== u.passHash) return { ok: false, error: 'Неверный пароль' };
+  return { ok: true };
+}
+
+async function tryRegister(username, password) {
+  const users = getUsers();
+  const key = username.toLowerCase();
+  if (users[key]) return { ok: false, error: 'Имя уже занято' };
+  if (username.length < 2) return { ok: false, error: 'Имя слишком короткое' };
+  if (password.length < 4) return { ok: false, error: 'Пароль должен быть от 4 символов' };
+  const salt = randomSalt();
+  const passHash = await sha256(password + salt);
+  users[key] = { passHash, salt, displayName: username, createdAt: Date.now() };
+  saveUsers(users);
+  // initialize empty data
+  localStorage.setItem(dataKey(key), JSON.stringify({ transactions: [], recurring: [] }));
+  return { ok: true };
+}
+
+function loginAs(username) {
+  const key = username.toLowerCase();
+  state.user = key;
+  const users = getUsers();
+  state.displayName = users[key]?.displayName || username;
+  localStorage.setItem(STORAGE_SESSION, key);
+  state.data = loadData(key);
+  applyDueRecurring();
+  showApp();
+}
+
+function logout() {
+  localStorage.removeItem(STORAGE_SESSION);
+  state.user = null;
+  state.data = null;
+  document.getElementById('appView').style.display = 'none';
+  document.getElementById('authView').style.display = 'flex';
+  document.getElementById('authPass').value = '';
+}
+
+function loadData(key) {
+  try {
+    const raw = localStorage.getItem(dataKey(key));
+    if (!raw) return { transactions: [], recurring: [] };
+    const d = JSON.parse(raw);
+    if (!d.transactions) d.transactions = [];
+    if (!d.recurring) d.recurring = [];
+    return d;
+  } catch { return { transactions: [], recurring: [] }; }
+}
+function saveData() {
+  if (!state.user) return;
+  localStorage.setItem(dataKey(state.user), JSON.stringify(state.data));
+}
+
+/* ============ AUTH UI ============ */
+let authMode = 'login';
+const authError = document.getElementById('authError');
+const authSwitchText = document.getElementById('authSwitchText');
+const authSwitchBtn = document.getElementById('authSwitchBtn');
+const authSubmit = document.getElementById('authSubmit');
+
+function setAuthMode(m) {
+  authMode = m;
+  if (m === 'login') {
+    authSubmit.textContent = 'Войти';
+    authSwitchText.textContent = 'Впервые здесь?';
+    authSwitchBtn.textContent = 'Создать аккаунт';
+    document.getElementById('authPass').setAttribute('autocomplete', 'current-password');
+  } else {
+    authSubmit.textContent = 'Создать аккаунт';
+    authSwitchText.textContent = 'Уже есть аккаунт?';
+    authSwitchBtn.textContent = 'Войти';
+    document.getElementById('authPass').setAttribute('autocomplete', 'new-password');
+  }
+  authError.style.display = 'none';
+}
+authSwitchBtn.addEventListener('click', () => setAuthMode(authMode === 'login' ? 'register' : 'login'));
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  handleAuth();
+});
+authSubmit.addEventListener('click', handleAuth);
+
+async function handleAuth() {
+  const username = document.getElementById('authUser').value.trim();
+  const password = document.getElementById('authPass').value;
+  if (!username || !password) {
+    showAuthError('Заполните оба поля');
+    return;
+  }
+  authSubmit.disabled = true;
+  authSubmit.textContent = '...';
+  let res;
+  if (authMode === 'login') res = await tryLogin(username, password);
+  else res = await tryRegister(username, password);
+  authSubmit.disabled = false;
+  setAuthMode(authMode);
+  if (!res.ok) { showAuthError(res.error); return; }
+  if (authMode === 'register') {
+    // auto login after register
+    const r2 = await tryLogin(username, password);
+    if (!r2.ok) { showAuthError('Не удалось войти после регистрации'); return; }
+  }
+  loginAs(username);
+}
+
+function showAuthError(msg) {
+  authError.textContent = msg;
+  authError.style.display = 'block';
+}
+
+/* ============ APP RENDER ============ */
+function showApp() {
+  document.getElementById('authView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+  document.getElementById('userChipName').textContent = state.displayName;
+  render();
+}
+
+function $(id) { return document.getElementById(id); }
+function fmt(n) {
+  const v = Math.round(n);
+  return v.toLocaleString('ru-RU');
+}
+function getCategory(type, id) {
+  return CATEGORIES[type].find(c => c.id === id) || CATEGORIES[type][CATEGORIES[type].length-1];
+}
+
+/* === Period boundaries === */
+function periodRange(period, anchor = new Date()) {
+  const now = new Date(anchor);
+  let start, end = new Date(now);
+  end.setHours(23,59,59,999);
+  if (period === 'week') {
+    start = new Date(now);
+    start.setDate(now.getDate() - 6);
+    start.setHours(0,0,0,0);
+  } else if (period === 'month') {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (period === 'quarter') {
+    const q = Math.floor(now.getMonth()/3);
+    start = new Date(now.getFullYear(), q*3, 1);
+  } else if (period === 'year') {
+    start = new Date(now.getFullYear(), 0, 1);
+  } else {
+    start = new Date(0);
+  }
+  return { start, end };
+}
+function previousPeriodRange(period, anchor = new Date()) {
+  const now = new Date(anchor);
+  if (period === 'week') {
+    const start = new Date(now); start.setDate(now.getDate() - 13); start.setHours(0,0,0,0);
+    const end = new Date(now); end.setDate(now.getDate() - 7); end.setHours(23,59,59,999);
+    return { start, end };
+  } else if (period === 'month') {
+    const start = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23,59,59,999);
+    return { start, end };
+  } else if (period === 'quarter') {
+    const q = Math.floor(now.getMonth()/3);
+    const start = new Date(now.getFullYear(), (q-1)*3, 1);
+    const end = new Date(now.getFullYear(), q*3, 0, 23,59,59,999);
+    return { start, end };
+  } else if (period === 'year') {
+    const start = new Date(now.getFullYear()-1, 0, 1);
+    const end = new Date(now.getFullYear()-1, 11, 31, 23,59,59,999);
+    return { start, end };
+  } else {
+    return { start: new Date(0), end: new Date(0) };
+  }
+}
+
+function txInRange(tx, range) {
+  const t = new Date(tx.date).getTime();
+  return t >= range.start.getTime() && t <= range.end.getTime();
+}
+
+function aggregate(transactions, range) {
+  let income = 0, expense = 0;
+  const byCat = { income: {}, expense: {} };
+  for (const tx of transactions) {
+    if (!txInRange(tx, range)) continue;
+    if (tx.type === 'income') {
+      income += tx.amount;
+      byCat.income[tx.category] = (byCat.income[tx.category]||0) + tx.amount;
+    } else {
+      expense += tx.amount;
+      byCat.expense[tx.category] = (byCat.expense[tx.category]||0) + tx.amount;
+    }
+  }
+  const savingsRate = income > 0 ? Math.max(0, (income-expense)/income) * 100 : 0;
+  return { income, expense, balance: income - expense, savingsRate, byCat };
+}
+
+function totalBalance(transactions) {
+  let s = 0;
+  for (const tx of transactions) s += (tx.type === 'income' ? tx.amount : -tx.amount);
+  return s;
+}
+
+function trendPct(current, previous) {
+  if (previous === 0) {
+    if (current === 0) return { pct: 0, dir: 0 };
+    return { pct: 100, dir: 1 };
+  }
+  const diff = current - previous;
+  const pct = (diff / Math.abs(previous)) * 100;
+  return { pct: Math.abs(pct), dir: diff === 0 ? 0 : (diff > 0 ? 1 : -1) };
+}
+
+/* === Render cards === */
+function renderCards() {
+  const r = periodRange(state.period);
+  const pr = previousPeriodRange(state.period);
+  const agg = aggregate(state.data.transactions, r);
+  const prev = aggregate(state.data.transactions, pr);
+  const bal = totalBalance(state.data.transactions);
+
+  // For balance card we use total (period-independent), but show flow trend
+  const flowCur = agg.income - agg.expense;
+  const flowPrev = prev.income - prev.expense;
+
+  const cards = [
+    {
+      cls: 'balance',
+      label: 'Текущий баланс',
+      value: bal,
+      detail: 'balance',
+      trend: state.period !== 'all' ? trendPct(flowCur, flowPrev) : null,
+      trendLabel: 'поток'
+    },
+    {
+      label: 'Доходы',
+      value: agg.income,
+      detail: 'income',
+      trend: state.period !== 'all' ? trendPct(agg.income, prev.income) : null,
+      goodUp: true
+    },
+    {
+      label: 'Расходы',
+      value: agg.expense,
+      detail: 'expense',
+      trend: state.period !== 'all' ? trendPct(agg.expense, prev.expense) : null,
+      goodUp: false
+    },
+    {
+      label: 'Норма сбережений',
+      value: agg.savingsRate,
+      isPercent: true,
+      detail: 'savings',
+      trend: state.period !== 'all' ? trendPct(agg.savingsRate, prev.savingsRate) : null,
+      goodUp: true
+    }
+  ];
+
+  const html = cards.map(c => {
+    const valHtml = c.isPercent
+      ? `<div class="card-value">${c.value.toFixed(0)}<span class="cur">%</span></div>`
+      : `<div class="card-value">${fmt(c.value)}<span class="cur">₽</span></div>`;
+    let trendHtml = '';
+    if (c.trend) {
+      const t = c.trend;
+      let cls = '';
+      if (t.dir !== 0) {
+        const good = c.goodUp === undefined ? true : (c.goodUp ? t.dir > 0 : t.dir < 0);
+        cls = good ? 'trend-up' : 'trend-down';
+      }
+      const arrow = t.dir > 0 ? '↗' : t.dir < 0 ? '↘' : '→';
+      const sign = t.dir > 0 ? '+' : t.dir < 0 ? '−' : '';
+      trendHtml = `<div class="card-trend ${cls}">${arrow} ${sign}${t.pct.toFixed(0)}% к прошлому</div>`;
+    }
+    return `<button class="card ${c.cls||''}" data-detail="${c.detail}">
+      <div class="card-label">${c.label}<span class="arrow">↗</span></div>
+      ${valHtml}
+      ${trendHtml}
+    </button>`;
+  }).join('');
+
+  $('cards').innerHTML = html;
+  document.querySelectorAll('.card[data-detail]').forEach(el => {
+    el.addEventListener('click', () => openDetailSheet(el.dataset.detail));
+  });
+}
+
+/* === Render transactions list === */
+function renderTxList(limit = 8) {
+  const list = [...state.data.transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+  const slice = list.slice(0, limit);
+  if (slice.length === 0) {
+    $('txList').innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">∅</div>
+        <div class="empty-title">Чистый лист</div>
+        <div class="empty-text">Нажмите «+» внизу, чтобы добавить первую операцию.</div>
+      </div>`;
+    return;
+  }
+  $('txList').innerHTML = slice.map(tx => txItemHtml(tx)).join('');
+  document.querySelectorAll('.tx-item[data-tx]').forEach(el => {
+    el.addEventListener('click', () => openTxEdit(el.dataset.tx));
+  });
+}
+
+function txItemHtml(tx) {
+  const cat = getCategory(tx.type, tx.category);
+  const d = new Date(tx.date);
+  const dateStr = d.toLocaleDateString('ru-RU', { day:'numeric', month:'short' });
+  const sign = tx.type === 'income' ? '+' : '−';
+  const cls = tx.type === 'income' ? 'pos' : 'neg';
+  const recBadge = tx.recurringId ? `<span class="recurring-badge">авто</span>` : '';
+  return `<button class="tx-item" data-tx="${tx.id}">
+    <div class="tx-icon">${cat.icon}</div>
+    <div class="tx-body">
+      <div class="tx-title">${escapeHtml(tx.note || cat.name)}</div>
+      <div class="tx-meta">${cat.name} <span class="dot"></span> ${dateStr} ${recBadge}</div>
+    </div>
+    <div class="tx-amount ${cls} mono">${sign}${fmt(tx.amount)} ₽</div>
+  </button>`;
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function render() {
+  renderCards();
+  renderTxList();
+}
+
+/* === Periods === */
+document.querySelectorAll('.period-pill').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.period-pill').forEach(p => p.classList.remove('active'));
+    b.classList.add('active');
+    state.period = b.dataset.p;
+    render();
+  });
+});
+
+/* ============ SHEETS ============ */
+const backdrop = $('backdrop');
+function openSheet(id) {
+  $(id).classList.add('open');
+  backdrop.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeAllSheets() {
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('open'));
+  backdrop.classList.remove('open');
+  document.body.style.overflow = '';
+}
+backdrop.addEventListener('click', closeAllSheets);
+document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeAllSheets));
+
+/* ============ ADD/EDIT TX ============ */
+let addType = 'expense';
+function populateCategorySelect() {
+  const sel = $('addCategory');
+  sel.innerHTML = CATEGORIES[addType].map(c => `<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');
+}
+document.querySelectorAll('#typeToggle button').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#typeToggle button').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    addType = b.dataset.type;
+    populateCategorySelect();
+  });
+});
+$('addRecurring').addEventListener('change', (e) => {
+  $('recurOptions').classList.toggle('show', e.target.checked);
+});
+
+function openAddSheet() {
+  state.editingTxId = null;
+  $('addSheetTitle').textContent = 'Новая операция';
+  addType = 'expense';
+  document.querySelectorAll('#typeToggle button').forEach(x => {
+    x.classList.toggle('active', x.dataset.type === addType);
+  });
+  populateCategorySelect();
+  $('addAmount').value = '';
+  $('addNote').value = '';
+  $('addDate').value = new Date().toISOString().slice(0,10);
+  $('addRecurring').checked = false;
+  $('recurOptions').classList.remove('show');
+  openSheet('sheetAdd');
+  setTimeout(() => $('addAmount').focus(), 250);
+}
+$('fab').addEventListener('click', openAddSheet);
+
+$('saveTxBtn').addEventListener('click', () => {
+  const raw = $('addAmount').value.replace(',', '.').trim();
+  const amount = parseFloat(raw);
+  if (!amount || amount <= 0) { showToast('Введите сумму', 'error'); return; }
+  const tx = {
+    id: cryptoId(),
+    type: addType,
+    amount: amount,
+    category: $('addCategory').value,
+    note: $('addNote').value.trim(),
+    date: $('addDate').value || new Date().toISOString().slice(0,10),
+    createdAt: Date.now()
+  };
+  if ($('addRecurring').checked) {
+    // create recurring rule
+    const rec = {
+      id: cryptoId(),
+      type: addType,
+      amount: amount,
+      category: $('addCategory').value,
+      note: $('addNote').value.trim(),
+      frequency: $('addFrequency').value,
+      startDate: $('addDate').value || new Date().toISOString().slice(0,10),
+      lastApplied: $('addDate').value || new Date().toISOString().slice(0,10),
+      createdAt: Date.now()
+    };
+    state.data.recurring.push(rec);
+    tx.recurringId = rec.id;
+  }
+  state.data.transactions.push(tx);
+  saveData();
+  closeAllSheets();
+  render();
+  showToast('Сохранено', 'success');
+});
+
+function cryptoId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+
+/* ============ TX EDIT/DELETE ============ */
+function openTxEdit(id) {
+  const tx = state.data.transactions.find(t => t.id === id);
+  if (!tx) return;
+  const cat = getCategory(tx.type, tx.category);
+  const body = $('txEditBody');
+  const d = new Date(tx.date).toLocaleDateString('ru-RU', { day:'numeric', month:'long', year:'numeric' });
+  const sign = tx.type === 'income' ? '+' : '−';
+  const recRule = tx.recurringId ? state.data.recurring.find(r => r.id === tx.recurringId) : null;
+  body.innerHTML = `
+    <div class="amount-input-wrap" style="border:none;margin:0;padding:8px 0 24px">
+      <div class="lbl">${tx.type === 'income' ? 'Доход' : 'Расход'}</div>
+      <div class="amount-input mono" style="display:block">${sign}${fmt(tx.amount)} ₽</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px;font-size:14px">
+      <div style="display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--line)">
+        <span style="color:var(--ink-3)">Категория</span>
+        <span>${cat.icon} ${cat.name}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--line)">
+        <span style="color:var(--ink-3)">Дата</span>
+        <span>${d}</span>
+      </div>
+      ${tx.note ? `<div style="padding-bottom:12px;border-bottom:1px solid var(--line)">
+        <div style="color:var(--ink-3);font-size:12px;margin-bottom:4px">Описание</div>
+        <div>${escapeHtml(tx.note)}</div>
+      </div>` : ''}
+      ${recRule ? `<div style="background:var(--paper-2);padding:12px;border-radius:4px;font-size:13px">
+        <strong>Регулярный платёж</strong><br>
+        <span style="color:var(--ink-3)">${freqLabel(recRule.frequency)}</span>
+      </div>` : ''}
+    </div>
+    <div style="margin-top:24px;display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-danger" onclick="deleteTx('${tx.id}')">Удалить операцию</button>
+      ${recRule ? `<button class="btn btn-ghost" onclick="deleteRecurring('${recRule.id}', true)">Удалить и остановить регулярный платёж</button>` : ''}
+    </div>
+  `;
+  openSheet('sheetTxEdit');
+}
+
+window.deleteTx = function(id) {
+  if (!confirm('Удалить эту операцию?')) return;
+  state.data.transactions = state.data.transactions.filter(t => t.id !== id);
+  saveData();
+  closeAllSheets();
+  render();
+  showToast('Операция удалена');
+};
+
+/* ============ DETAIL SHEETS (card clicks) ============ */
+function openDetailSheet(kind) {
+  const r = periodRange(state.period);
+  const pr = previousPeriodRange(state.period);
+  const agg = aggregate(state.data.transactions, r);
+  const prev = aggregate(state.data.transactions, pr);
+  const periodName = periodLabel(state.period);
+  const bal = totalBalance(state.data.transactions);
+
+  let title = '', html = '';
+
+  if (kind === 'balance') {
+    title = 'Баланс';
+    const filtered = [...state.data.transactions]
+      .filter(t => txInRange(t, r))
+      .sort((a,b) => new Date(b.date) - new Date(a.date));
+    html = `
+      <div class="detail-summary">
+        <div class="detail-stat"><div class="lbl">Общий баланс</div><div class="val mono">${fmt(bal)} ₽</div></div>
+        <div class="detail-stat"><div class="lbl">Поток за ${periodName}</div><div class="val mono">${(agg.income-agg.expense)>=0?'+':'−'}${fmt(Math.abs(agg.income-agg.expense))} ₽</div></div>
+        <div class="detail-stat"><div class="lbl">Доходы</div><div class="val mono" style="color:var(--green)">+${fmt(agg.income)} ₽</div></div>
+        <div class="detail-stat"><div class="lbl">Расходы</div><div class="val mono">−${fmt(agg.expense)} ₽</div></div>
+      </div>
+      ${trendBlock(agg.income - agg.expense, prev.income - prev.expense, 'Чистый поток', true, periodName)}
+      <div class="section-title" style="margin-top:24px;margin-bottom:8px">Операции за ${periodName}</div>
+      <div class="tx-detail-list">
+        ${filtered.length ? filtered.map(txItemHtml).join('') : `<div class="empty"><div class="empty-text">За этот период нет операций</div></div>`}
+      </div>
+    `;
+  } else if (kind === 'income' || kind === 'expense') {
+    const isInc = kind === 'income';
+    title = isInc ? 'Доходы' : 'Расходы';
+    const total = isInc ? agg.income : agg.expense;
+    const prevTotal = isInc ? prev.income : prev.expense;
+    const byCat = isInc ? agg.byCat.income : agg.byCat.expense;
+    const sorted = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+    const filtered = [...state.data.transactions]
+      .filter(t => t.type === kind && txInRange(t, r))
+      .sort((a,b) => new Date(b.date) - new Date(a.date));
+    html = `
+      <div class="detail-summary">
+        <div class="detail-stat"><div class="lbl">Итого за ${periodName}</div><div class="val mono">${fmt(total)} ₽</div></div>
+        <div class="detail-stat"><div class="lbl">Операций</div><div class="val">${filtered.length}</div></div>
+      </div>
+      ${trendBlock(total, prevTotal, isInc ? 'Доход' : 'Расход', isInc, periodName)}
+      <div class="section-title" style="margin-top:24px;margin-bottom:12px">По категориям</div>
+      <div class="category-list">
+        ${sorted.length ? sorted.map(([catId, sum]) => {
+          const cat = getCategory(kind, catId);
+          const pct = total > 0 ? (sum/total)*100 : 0;
+          return `<div class="category-bar">
+            <div class="category-bar-head">
+              <span class="category-bar-name">${cat.icon} ${cat.name}</span>
+              <span class="category-bar-amount">${fmt(sum)} ₽ · ${pct.toFixed(0)}%</span>
+            </div>
+            <div class="category-bar-track"><div class="category-bar-fill ${isInc?'income':''}" style="width:${pct}%"></div></div>
+          </div>`;
+        }).join('') : `<div class="empty"><div class="empty-text">Нет данных за период</div></div>`}
+      </div>
+      <div class="section-title" style="margin-top:24px;margin-bottom:8px">Все операции</div>
+      <div class="tx-detail-list">
+        ${filtered.length ? filtered.map(txItemHtml).join('') : `<div class="empty"><div class="empty-text">Пусто</div></div>`}
+      </div>
+    `;
+  } else if (kind === 'savings') {
+    title = 'Норма сбережений';
+    const rate = agg.savingsRate;
+    const prevRate = prev.savingsRate;
+    const saved = agg.income - agg.expense;
+    html = `
+      <div class="detail-summary">
+        <div class="detail-stat"><div class="lbl">За ${periodName}</div><div class="val">${rate.toFixed(1)}%</div></div>
+        <div class="detail-stat"><div class="lbl">Сбережено</div><div class="val mono">${fmt(Math.max(0,saved))} ₽</div></div>
+      </div>
+      ${trendBlock(rate, prevRate, 'Норма', true, periodName, '%')}
+      <div style="background:var(--paper-2);padding:16px;border-radius:4px;font-size:13.5px;line-height:1.55;color:var(--ink-2);margin-top:20px">
+        <strong style="font-family:Fraunces,serif;font-size:15px">Что это значит?</strong><br><br>
+        Норма сбережений показывает, какую долю дохода вы откладываете. Считается как <em>(доход − расход) ÷ доход × 100%</em>.<br><br>
+        <strong>Эталоны:</strong><br>
+        • До 10% — стоит подтянуть<br>
+        • 10–20% — здоровый уровень<br>
+        • 20%+ — отличный результат, путь к финансовой свободе
+      </div>
+    `;
+  }
+
+  $('detailTitle').textContent = title;
+  $('detailBody').innerHTML = html;
+  document.querySelectorAll('#detailBody .tx-item[data-tx]').forEach(el => {
+    el.addEventListener('click', () => openTxEdit(el.dataset.tx));
+  });
+  openSheet('sheetDetail');
+}
+
+function trendBlock(current, previous, label, goodUp, periodName, unit = '₽') {
+  if (state.period === 'all') return '';
+  const t = trendPct(current, previous);
+  let cls = '', arrow = '→', sign = '';
+  if (t.dir !== 0) {
+    const good = goodUp ? t.dir > 0 : t.dir < 0;
+    cls = good ? 'trend-up' : 'trend-down';
+    arrow = t.dir > 0 ? '↗' : '↘';
+    sign = t.dir > 0 ? '+' : '−';
+  }
+  const prevDisplay = unit === '%' ? `${previous.toFixed(1)}${unit}` : `${fmt(Math.abs(previous))} ${unit}`;
+  return `<div style="background:var(--paper-2);padding:14px 16px;border-radius:4px;margin-top:6px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:2px">К прошлому периоду</div>
+      <div style="font-size:13px;color:var(--ink-2)">Было: <span class="mono">${prevDisplay}</span></div>
+    </div>
+    <div class="${cls}" style="font-family:'JetBrains Mono',monospace;font-weight:500;font-size:15px">${arrow} ${sign}${t.pct.toFixed(0)}%</div>
+  </div>`;
+}
+
+function periodLabel(p) {
+  return { week:'неделю', month:'месяц', quarter:'квартал', year:'год', all:'всё время' }[p];
+}
+function freqLabel(f) {
+  return {
+    daily:'Ежедневно', weekly:'Еженедельно', biweekly:'Раз в 2 недели',
+    monthly:'Ежемесячно', quarterly:'Раз в квартал', yearly:'Ежегодно'
+  }[f] || f;
+}
+
+/* ============ RECURRING ENGINE ============ */
+function addInterval(dateStr, frequency) {
+  const d = new Date(dateStr);
+  switch (frequency) {
+    case 'daily': d.setDate(d.getDate()+1); break;
+    case 'weekly': d.setDate(d.getDate()+7); break;
+    case 'biweekly': d.setDate(d.getDate()+14); break;
+    case 'monthly': d.setMonth(d.getMonth()+1); break;
+    case 'quarterly': d.setMonth(d.getMonth()+3); break;
+    case 'yearly': d.setFullYear(d.getFullYear()+1); break;
+  }
+  return d.toISOString().slice(0,10);
+}
+
+function applyDueRecurring() {
+  if (!state.data || !state.data.recurring) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let added = 0;
+  for (const rec of state.data.recurring) {
+    // start with first occurrence after lastApplied
+    let next = addInterval(rec.lastApplied, rec.frequency);
+    while (new Date(next).getTime() <= today.getTime()) {
+      // only create if not already created (idempotent)
+      const exists = state.data.transactions.some(t => t.recurringId === rec.id && t.date === next);
+      if (!exists) {
+        state.data.transactions.push({
+          id: cryptoId(),
+          type: rec.type,
+          amount: rec.amount,
+          category: rec.category,
+          note: rec.note,
+          date: next,
+          createdAt: Date.now(),
+          recurringId: rec.id
+        });
+        added++;
+      }
+      rec.lastApplied = next;
+      next = addInterval(next, rec.frequency);
+    }
+  }
+  if (added > 0) saveData();
+  return added;
+}
+
+/* ============ RECURRING UI ============ */
+$('btnRecurring').addEventListener('click', () => {
+  renderRecurringSheet();
+  openSheet('sheetRecurring');
+});
+
+function renderRecurringSheet() {
+  const body = $('recurringBody');
+  if (!state.data.recurring.length) {
+    body.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">↻</div>
+        <div class="empty-title">Нет регулярных платежей</div>
+        <div class="empty-text">При создании операции отметьте «Повторяющийся платёж» — подписка, аренда или зарплата будут добавляться сами.</div>
+      </div>`;
+    return;
+  }
+  const items = state.data.recurring.map(r => {
+    const cat = getCategory(r.type, r.category);
+    const sign = r.type === 'income' ? '+' : '−';
+    const cls = r.type === 'income' ? 'pos' : 'neg';
+    const nextDate = addInterval(r.lastApplied, r.frequency);
+    const next = new Date(nextDate).toLocaleDateString('ru-RU', { day:'numeric', month:'long' });
+    return `<div class="recur-item">
+      <div class="tx-icon">${cat.icon}</div>
+      <div class="tx-body">
+        <div class="tx-title">${escapeHtml(r.note || cat.name)}</div>
+        <div class="tx-meta">${freqLabel(r.frequency)}</div>
+        <div class="recur-next">След. ${next}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div class="tx-amount ${cls} mono">${sign}${fmt(r.amount)} ₽</div>
+        <button class="recur-delete" onclick="deleteRecurring('${r.id}')">Удалить</button>
+      </div>
+    </div>`;
+  }).join('');
+  const monthlyTotal = state.data.recurring.reduce((s,r) => {
+    const mult = { daily:30, weekly:4.33, biweekly:2.17, monthly:1, quarterly:1/3, yearly:1/12 }[r.frequency] || 0;
+    return s + (r.type === 'expense' ? r.amount * mult : 0);
+  }, 0);
+  body.innerHTML = `
+    <div style="background:var(--paper-2);padding:14px 16px;border-radius:4px;margin-bottom:18px">
+      <div style="font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px">Регулярных расходов в месяц</div>
+      <div style="font-family:Fraunces,serif;font-size:26px;letter-spacing:-0.01em">~${fmt(monthlyTotal)} ₽</div>
+    </div>
+    ${items}
+  `;
+}
+
+window.deleteRecurring = function(id, deleteAlsoTx = false) {
+  if (!confirm('Удалить регулярный платёж? Будущие операции не будут создаваться.')) return;
+  state.data.recurring = state.data.recurring.filter(r => r.id !== id);
+  if (deleteAlsoTx) {
+    state.data.transactions = state.data.transactions.filter(t => t.recurringId !== id);
+  } else {
+    // unlink existing
+    state.data.transactions.forEach(t => { if (t.recurringId === id) delete t.recurringId; });
+  }
+  saveData();
+  renderRecurringSheet();
+  render();
+  closeAllSheets();
+  showToast('Регулярный платёж удалён');
+};
+
+/* ============ TIPS ENGINE ============ */
+$('btnTips').addEventListener('click', () => {
+  renderTipsSheet();
+  openSheet('sheetTips');
+});
+
+function generateTips() {
+  const r = periodRange('month');
+  const pr = previousPeriodRange('month');
+  const agg = aggregate(state.data.transactions, r);
+  const prev = aggregate(state.data.transactions, pr);
+  const tips = [];
+
+  if (state.data.transactions.length === 0) {
+    tips.push({
+      icon:'✨', title:'Начните вести учёт',
+      body:'Чтобы давать персональные советы, мне нужны данные о ваших операциях. Добавьте несколько доходов и расходов за этот месяц — и я найду, где можно сэкономить.',
+      tag:'старт', tagCls:''
+    });
+    return tips;
+  }
+
+  const inc = agg.income, exp = agg.expense;
+
+  // Savings rate analysis
+  if (inc > 0) {
+    const rate = (inc - exp) / inc * 100;
+    if (rate < 0) {
+      tips.push({
+        icon:'⚠️', priority:true,
+        title:'Расходы превышают доходы',
+        body:`В этом месяце потрачено на <strong>${fmt(exp - inc)} ₽</strong> больше, чем заработано. Это путь к долгам. Срочно сократите крупнейшую категорию расходов или найдите дополнительный источник дохода.`,
+        tag:'критично', tagCls:'warn'
+      });
+    } else if (rate < 10) {
+      tips.push({
+        icon:'📉',
+        title:'Низкая норма сбережений',
+        body:`Откладываете лишь <strong>${rate.toFixed(0)}%</strong> дохода. Эксперты советуют 10–20%. Попробуйте правило 50/30/20: 50% — нужды, 30% — желания, 20% — сбережения.`,
+        tag:'улучшить', tagCls:'warn'
+      });
+    } else if (rate >= 20) {
+      tips.push({
+        icon:'🎯',
+        title:'Отличная норма сбережений',
+        body:`Вы откладываете <strong>${rate.toFixed(0)}%</strong> — это очень здоровый уровень. Подумайте о том, чтобы вложить излишки в инструменты с доходностью выше инфляции.`,
+        tag:'отлично', tagCls:'good'
+      });
+    } else {
+      tips.push({
+        icon:'✓',
+        title:'Здоровый уровень сбережений',
+        body:`Откладываете <strong>${rate.toFixed(0)}%</strong> — хорошо. Цель: добраться до 20% и формировать подушку безопасности из 3–6 месяцев расходов (около <strong>${fmt(exp*3)}–${fmt(exp*6)} ₽</strong>).`,
+        tag:'норма', tagCls:'good'
+      });
+    }
+  }
+
+  // Top expense category
+  const expByCat = Object.entries(agg.byCat.expense).sort((a,b)=>b[1]-a[1]);
+  if (expByCat.length > 0 && exp > 0) {
+    const [topId, topSum] = expByCat[0];
+    const topCat = getCategory('expense', topId);
+    const pct = topSum / exp * 100;
+    if (pct > 40) {
+      tips.push({
+        icon: topCat.icon,
+        title: `${topCat.name} — ${pct.toFixed(0)}% всех расходов`,
+        body: `Это много для одной категории — <strong>${fmt(topSum)} ₽</strong> в месяц. Просмотрите операции: возможно, есть что урезать. Сокращение на 10% даст экономию <strong>${fmt(topSum*0.1)} ₽</strong>.`,
+        tag:'категория', tagCls:''
+      });
+    }
+  }
+
+  // Cafes vs food
+  const cafes = agg.byCat.expense['cafes'] || 0;
+  const food = agg.byCat.expense['food'] || 0;
+  if (cafes > food && cafes > 0) {
+    tips.push({
+      icon:'☕',
+      title:'На кафе уходит больше, чем на продукты',
+      body:`Кафе и рестораны — <strong>${fmt(cafes)} ₽</strong>, продукты — <strong>${fmt(food)} ₽</strong>. Готовка дома обычно в 3–4 раза дешевле. Даже 2 ужина дома в неделю могут сэкономить <strong>~${fmt(cafes*0.3)} ₽</strong>.`,
+      tag:'оптимизация', tagCls:''
+    });
+  }
+
+  // Subscriptions
+  const subs = agg.byCat.expense['subscriptions'] || 0;
+  if (inc > 0 && subs / inc > 0.05) {
+    tips.push({
+      icon:'📺',
+      title:'Подписки съедают много',
+      body:`На подписки уходит <strong>${fmt(subs)} ₽</strong> в месяц — это <strong>${(subs/inc*100).toFixed(0)}%</strong> дохода. Откройте раздел регулярных платежей и проверьте, какие из них реально используете.`,
+      tag:'подписки', tagCls:''
+    });
+  }
+
+  // Recurring overhead
+  if (state.data.recurring.length) {
+    const monthlyRecur = state.data.recurring.reduce((s,r) => {
+      const mult = { daily:30, weekly:4.33, biweekly:2.17, monthly:1, quarterly:1/3, yearly:1/12 }[r.frequency] || 0;
+      return s + (r.type === 'expense' ? r.amount * mult : 0);
+    }, 0);
+    if (inc > 0 && monthlyRecur / inc > 0.5) {
+      tips.push({
+        icon:'🔁',
+        title:'Высокая доля фиксированных расходов',
+        body:`Регулярные платежи съедают <strong>${(monthlyRecur/inc*100).toFixed(0)}%</strong> дохода (~${fmt(monthlyRecur)} ₽/мес). Это снижает гибкость бюджета — пересмотрите подписки и услуги.`,
+        tag:'фикс. расходы', tagCls:'warn'
+      });
+    }
+  }
+
+  // Trend
+  if (prev.expense > 0) {
+    const growth = (exp - prev.expense) / prev.expense * 100;
+    if (growth > 20) {
+      tips.push({
+        icon:'📊',
+        title:`Расходы выросли на ${growth.toFixed(0)}%`,
+        body:`По сравнению с прошлым месяцем тратите больше на <strong>${fmt(exp - prev.expense)} ₽</strong>. Откройте детализацию по расходам и посмотрите, какие категории выросли сильнее всего.`,
+        tag:'тренд', tagCls:'warn'
+      });
+    } else if (growth < -10) {
+      tips.push({
+        icon:'🎉',
+        title:`Расходы сократились на ${Math.abs(growth).toFixed(0)}%`,
+        body:`Отличная динамика — экономия <strong>${fmt(prev.expense - exp)} ₽</strong> к прошлому месяцу. Эти деньги стоит сразу отложить, а не оставлять на счёте «на всякий случай».`,
+        tag:'тренд', tagCls:'good'
+      });
+    }
+  }
+
+  // Emergency fund
+  if (inc > 0 && exp > 0) {
+    tips.push({
+      icon:'🛡️',
+      title:'Подушка безопасности',
+      body:`Цель: <strong>${fmt(exp*3)}–${fmt(exp*6)} ₽</strong> на отдельном счёте (3–6 месяцев расходов). Это страховка от неожиданностей: потеря работы, болезнь, срочный ремонт.`,
+      tag:'долгосрок', tagCls:''
+    });
+  }
+
+  // 50/30/20 reference
+  if (inc > 0) {
+    tips.push({
+      icon:'⚖️',
+      title:'Правило 50/30/20 для вашего дохода',
+      body:`При доходе <strong>${fmt(inc)} ₽</strong>: <strong>${fmt(inc*0.5)} ₽</strong> на нужды (жильё, еда, транспорт), <strong>${fmt(inc*0.3)} ₽</strong> на желания, <strong>${fmt(inc*0.2)} ₽</strong> в сбережения.`,
+      tag:'модель', tagCls:''
+    });
+  }
+
+  return tips;
+}
+
+function renderTipsSheet() {
+  const tips = generateTips();
+  const body = $('tipsBody');
+  body.innerHTML = `
+    <div style="font-size:13px;color:var(--ink-3);margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+      На основе ваших данных за этот месяц. Чем больше операций — тем точнее советы.
+    </div>
+    ${tips.map(t => `
+      <div class="tip-card ${t.priority?'priority':''}">
+        <div class="tip-head">
+          <span class="tip-icon-sm">${t.icon}</span>
+          <span class="tip-title">${t.title}</span>
+          ${t.tag ? `<span class="tip-tag ${t.tagCls||''}">${t.tag}</span>` : ''}
+        </div>
+        <div class="tip-body">${t.body}</div>
+      </div>
+    `).join('')}
+  `;
+}
+
+/* ============ SETTINGS / IMPORT / EXPORT / BACKUP ============ */
+$('btnSettings').addEventListener('click', () => openSheet('sheetSettings'));
+$('logoutBtn').addEventListener('click', () => { closeAllSheets(); logout(); });
+
+$('wipeBtn').addEventListener('click', () => {
+  if (!confirm('Удалить аккаунт и все данные? Это нельзя отменить.')) return;
+  if (!confirm('Точно? Все операции будут безвозвратно стёрты.')) return;
+  const users = getUsers();
+  delete users[state.user];
+  saveUsers(users);
+  localStorage.removeItem(dataKey(state.user));
+  closeAllSheets();
+  logout();
+  showToast('Данные удалены');
+});
+
+/* === CSV Export === */
+$('exportCsvBtn').addEventListener('click', () => {
+  const rows = [['date','type','category','amount','note','recurring']];
+  for (const t of state.data.transactions) {
+    rows.push([t.date, t.type, t.category, t.amount, t.note || '', t.recurringId ? 'yes' : '']);
+  }
+  const csv = rows.map(r => r.map(csvEscape).join(',')).join('\n');
+  downloadFile(`ledger-${state.user}-${dateStamp()}.csv`, csv, 'text/csv;charset=utf-8');
+  showToast('CSV скачан', 'success');
+});
+
+function csvEscape(v) {
+  const s = String(v ?? '');
+  if (/[",\n]/.test(s)) return '"' + s.replace(/"/g,'""') + '"';
+  return s;
+}
+
+/* === CSV Import === */
+$('importCsvBtn').addEventListener('click', () => $('fileInputCsv').click());
+$('fileInputCsv').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  try {
+    const parsed = parseCSV(text);
+    if (!parsed.length) { showToast('Файл пуст', 'error'); return; }
+    const header = parsed[0].map(h => h.toLowerCase().trim());
+    const required = ['date','type','category','amount'];
+    for (const r of required) if (!header.includes(r)) {
+      showToast(`Нет колонки "${r}"`, 'error'); return;
+    }
+    const idx = {
+      date: header.indexOf('date'),
+      type: header.indexOf('type'),
+      category: header.indexOf('category'),
+      amount: header.indexOf('amount'),
+      note: header.indexOf('note')
+    };
+    let imported = 0, skipped = 0;
+    for (let i=1; i<parsed.length; i++) {
+      const row = parsed[i];
+      if (!row.length || row.every(x=>!x.trim())) continue;
+      const amt = parseFloat(String(row[idx.amount]).replace(',', '.'));
+      if (!amt || amt <= 0) { skipped++; continue; }
+      const type = row[idx.type] === 'income' ? 'income' : 'expense';
+      const date = (row[idx.date] || '').slice(0,10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { skipped++; continue; }
+      state.data.transactions.push({
+        id: cryptoId(),
+        type,
+        amount: amt,
+        category: row[idx.category] || (type === 'income' ? 'other_income' : 'other'),
+        note: idx.note >= 0 ? row[idx.note] : '',
+        date,
+        createdAt: Date.now()
+      });
+      imported++;
+    }
+    saveData();
+    render();
+    closeAllSheets();
+    showToast(`Импортировано ${imported}${skipped?`, пропущено ${skipped}`:''}`, 'success');
+  } catch (err) {
+    showToast('Ошибка чтения CSV', 'error');
+  }
+  e.target.value = '';
+});
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i=0; i<text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"' && text[i+1] === '"') { field += '"'; i++; }
+      else if (c === '"') inQuotes = false;
+      else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c === '\r') { /* skip */ }
+      else field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+/* === JSON Backup / Restore === */
+$('backupBtn').addEventListener('click', () => {
+  const payload = {
+    app: 'ledger',
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    user: state.displayName,
+    data: state.data
+  };
+  downloadFile(`ledger-backup-${state.user}-${dateStamp()}.json`, JSON.stringify(payload, null, 2), 'application/json');
+  showToast('Бэкап скачан', 'success');
+});
+
+$('restoreBtn').addEventListener('click', () => $('fileInputJson').click());
+$('fileInputJson').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const text = await file.text();
+  try {
+    const json = JSON.parse(text);
+    if (!json.data || !Array.isArray(json.data.transactions)) {
+      showToast('Файл не похож на бэкап Ledger', 'error');
+      return;
+    }
+    if (!confirm('Заменить ВСЕ текущие данные данными из бэкапа?')) return;
+    state.data = {
+      transactions: json.data.transactions || [],
+      recurring: json.data.recurring || []
+    };
+    saveData();
+    render();
+    closeAllSheets();
+    showToast('Восстановлено', 'success');
+  } catch (err) {
+    showToast('Не удалось прочитать JSON', 'error');
+  }
+  e.target.value = '';
+});
+
+function downloadFile(name, content, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+function dateStamp() {
+  return new Date().toISOString().slice(0,10);
+}
+
+/* === See all transactions === */
+$('seeAllBtn').addEventListener('click', () => openDetailSheet('balance'));
+
+/* ============ TOAST ============ */
+let toastTimer;
+function showToast(msg, kind = '') {
+  const t = $('toast');
+  t.className = 'toast' + (kind ? ' ' + kind : '');
+  t.textContent = msg;
+  requestAnimationFrame(() => t.classList.add('show'));
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ============ BOOT ============ */
+(function boot() {
+  // amount input — keep numeric only
+  $('addAmount').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/[^\d.,]/g,'').replace(',', '.');
+    const parts = v.split('.');
+    if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
+    if (parts[1] && parts[1].length > 2) v = parts[0] + '.' + parts[1].slice(0,2);
+    e.target.value = v;
+  });
+
+  const session = localStorage.getItem(STORAGE_SESSION);
+  if (session && getUsers()[session]) {
+    loginAs(session);
+  } else {
+    setAuthMode('login');
+  }
+})();
+</script>
+</body>
+</html>
